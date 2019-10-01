@@ -9,13 +9,11 @@
 import UIKit
 
 // Basic App-/WebView-configuration
-let appTitle = "iOS PWA Wrapper"
-let webAppUrl = URL(string: "https://www.leasingrechnen.at")
-let allowedOrigin = "leasingrechnen.at"
+let appTitle = "Kinscape"
+let webAppUrl = URL(string: "https://www.kinscape.com")
+let allowedOrigin = "kinscape.com"
 let menuButtonTitle = NSLocalizedString("menu", comment: "")
-let menuButtonJavascript = """
-    $('.button-collapse').sideNav('show');
-"""
+let menuButtonJavascript = ""
 let useUserAgentPostfix = true
 let userAgentPostfix = "iOSApp"
 let useCustomUserAgent = false
@@ -36,7 +34,7 @@ let alternateRightButtonJavascript = """
 """
 
 // Colors & Styles
-let useLightStatusBarStyle = true
+let useLightStatusBarStyle = false
 let navigationBarColor = getColorFromHex(hex: 0xF44336, alpha: 1.0)
 let navigationTitleColor = getColorFromHex(hex: 0xFFFFFF, alpha: 1.0)
 let navigationButtonColor = navigationTitleColor

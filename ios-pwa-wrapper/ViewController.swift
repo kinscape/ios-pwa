@@ -24,7 +24,6 @@ class ViewController: UIViewController {
     // MARK: Globals
     var webView: WKWebView!
     var tempView: WKWebView!
-    var progressBar : UIProgressView!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -36,6 +35,15 @@ class ViewController: UIViewController {
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
+    }
+    
+    var isHidden = true{
+        didSet{
+            self.setNeedsStatusBarAppearanceUpdate()
+        }
+    }
+    override var prefersStatusBarHidden: Bool {
+        return isHidden
     }
     
     // UI Actions
@@ -81,24 +89,31 @@ class ViewController: UIViewController {
             }
             */
         }
-        if (keyPath == #keyPath(WKWebView.estimatedProgress)) {
-            progressBar.progress = Float(webView.estimatedProgress)
-            rightButton.isEnabled = (webView.estimatedProgress == 1)
-        }
     }
     
     // Initialize WKWebView
     func setupWebView() {
+        // set localstorage item to not show install screen
+        let configuration = WKWebViewConfiguration()
+        let contentController = WKUserContentController()
+        let js = "javascript: localStorage.setItem('overlayStatus', 'hidden')"
+        let userScript = WKUserScript(source: js, injectionTime: WKUserScriptInjectionTime.atDocumentStart, forMainFrameOnly: false)
+        contentController.addUserScript(userScript)
+        configuration.userContentController = contentController
+        
+        // settings
+        configuration.preferences.javaScriptEnabled = true
+        configuration.allowsInlineMediaPlayback = true
+        configuration.mediaTypesRequiringUserActionForPlayback = []
         // set up webview
-        webView = WKWebView(frame: CGRect(x: 0, y: 0, width: webViewContainer.frame.width, height: webViewContainer.frame.height))
+        webView = WKWebView(frame: CGRect(x: 0, y: 0, width: self.view.frame.width, height: self.view.frame.height), configuration: configuration)
         webView.navigationDelegate = self
         webView.uiDelegate = self
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        webViewContainer.addSubview(webView)
+        self.view.addSubview(webView)
         
         // settings
         webView.allowsBackForwardNavigationGestures = true
-        webView.configuration.preferences.javaScriptEnabled = true
         if #available(iOS 10.0, *) {
             webView.configuration.ignoresViewportScaleLimits = false
         }
@@ -136,12 +151,6 @@ class ViewController: UIViewController {
     func setupUI() {
         // leftButton.isEnabled = false
 
-        // progress bar
-        progressBar = UIProgressView(frame: CGRect(x: 0, y: 0, width: webViewContainer.frame.width, height: 40))
-        progressBar.autoresizingMask = [.flexibleWidth]
-        progressBar.progress = 0.0
-        progressBar.tintColor = progressBarColor
-        webView.addSubview(progressBar)
         
         // activity indicator
         activityIndicator.color = activityIndicatorColor
@@ -152,29 +161,10 @@ class ViewController: UIViewController {
         offlineButton.tintColor = buttonColor
         offlineView.isHidden = true
         
-        // setup navigation bar
-        if (forceLargeTitle) {
-            if #available(iOS 11.0, *) {
-                navigationItem.largeTitleDisplayMode = UINavigationItem.LargeTitleDisplayMode.always
-            }
-        }
-        if (useLightStatusBarStyle) {
-            self.navigationController?.navigationBar.barStyle = UIBarStyle.black
-        }
         
         // handle menu button changes
         /// set default
         rightButton.title = menuButtonTitle
-        /// update if necessary
-        updateRightButtonTitle(invert: false)
-        /// create callback for device rotation
-        let deviceRotationCallback : (Notification) -> Void = { _ in
-            // this fires BEFORE the UI is updated, so we check for the opposite orientation,
-            // if it's not the initial setup
-            self.updateRightButtonTitle(invert: true)
-        }
-        /// listen for device rotation
-        NotificationCenter.default.addObserver(forName: .UIDeviceOrientationDidChange, object: nil, queue: .main, using: deviceRotationCallback)
 
         /*
         // @DEBUG: test offline view
@@ -213,34 +203,6 @@ class ViewController: UIViewController {
         }
     }
     
-    // UI Helper method to update right button text according to available screen width
-    func updateRightButtonTitle(invert: Bool) {
-        if (changeMenuButtonOnWideScreens) {
-            // first, check if device is wide enough to
-            if (UIScreen.main.fixedCoordinateSpace.bounds.height < wideScreenMinWidth) {
-                // long side of the screen is not long enough, don't need to update
-                return
-            }
-            // second, check if both portrait and landscape would fit
-            if (UIScreen.main.fixedCoordinateSpace.bounds.height >= wideScreenMinWidth
-                && UIScreen.main.fixedCoordinateSpace.bounds.width >= wideScreenMinWidth) {
-                // both orientations are considered "wide"
-                rightButton.title = alternateRightButtonTitle
-                return
-            }
-            
-            // if we land here, check the current screen width.
-            // we need to flip it around in some cases though, as our callback is triggered before the UI is updated
-            let changeToAlternateTitle = invert
-                ? !isWideScreen()
-                : isWideScreen()
-            if (changeToAlternateTitle) {
-                rightButton.title = alternateRightButtonTitle
-            } else {
-                rightButton.title = menuButtonTitle
-            }
-        }
-    }
 }
 
 // WebView Event Listeners
@@ -248,11 +210,6 @@ extension ViewController: WKNavigationDelegate {
     // didFinish
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         // set title
-        if (changeAppTitleToPageTitle) {
-            navigationItem.title = webView.title
-        }
-        // hide progress bar after initial load
-        progressBar.isHidden = true
         // hide activity indicator
         activityIndicatorView.isHidden = true
         activityIndicator.stopAnimating()
@@ -298,3 +255,30 @@ extension ViewController: WKUIDelegate {
         }
     }
 }
+
+//// make window.alert() work
+//func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping () -> Void) {
+//
+//    let alertController = UIAlertController(title: nil, message: message, preferredStyle: .actionSheet)
+//
+//    alertController.addAction(UIAlertAction(title: "Ok", style: .default, handler: { (action) in
+//        completionHandler()
+//    }))
+//
+//    self.present(alertController, animated: true, completion: nil)
+//}
+//// make window.confirm() work
+//func webView(_ webView: WKWebView, runJavaScriptConfirmPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (Bool) -> Void) {
+//
+//    let alertController = UIAlertController(title: nil, message: message, preferredStyle: .actionSheet)
+//
+//    alertController.addAction(UIAlertAction(title: "Yes", style: .default, handler: { (action) in
+//        completionHandler(true)
+//    }))
+//
+//    alertController.addAction(UIAlertAction(title: "No", style: .default, handler: { (action) in
+//        completionHandler(false)
+//    }))
+//
+//    self.present(alertController, animated: true, completion: nil)
+//}
