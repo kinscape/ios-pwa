@@ -216,7 +216,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 2D504BE61FA100E20019B279 /* Build configuration list for PBXProject "ios-pwa-wrapper" */;
+			buildConfigurationList = 2D504BE61FA100E20019B279 /* Build configuration list for PBXProject "kinscape-ios-pwa" */;
 			compatibilityVersion = "Xcode 8.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -548,7 +548,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		2D504BE61FA100E20019B279 /* Build configuration list for PBXProject "ios-pwa-wrapper" */ = {
+		2D504BE61FA100E20019B279 /* Build configuration list for PBXProject "kinscape-ios-pwa" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				2D504C141FA100E20019B279 /* Debug */,
